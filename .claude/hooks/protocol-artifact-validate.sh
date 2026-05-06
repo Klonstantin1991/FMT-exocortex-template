@@ -116,6 +116,54 @@ if [ -n "$PREV_DAYPLAN" ] && [ "$PREV_DAYPLAN" != "$DAYPLAN" ]; then
   fi
 fi
 
+# --- WeekPlan Validation (Ф6.1 WP-265) ---
+WEEKPLAN=$(ls "$GOV_PATH"/current/WeekPlan\ *.md 2>/dev/null | sort | tail -1)
+if [ -n "$WEEKPLAN" ]; then
+  WP_LINES=$(wc -l < "$WEEKPLAN" | tr -d ' ')
+  WP_ERRORS=()
+  WP_MISSING_LIST=()
+
+  # Детектор (а): >80 строк без достаточного числа <details>
+  WP_DETAILS_COUNT=$(grep -c '<details' "$WEEKPLAN" 2>/dev/null || true); WP_DETAILS_COUNT=${WP_DETAILS_COUNT:-0}
+  if [ "$WP_LINES" -gt 80 ] && [ "$WP_DETAILS_COUNT" -lt 3 ]; then
+    WP_ERRORS+=("WeekPlan >80 строк ($WP_LINES) но collapsible секций < 3 ($WP_DETAILS_COUNT). Используй <details>/<summary> (formatting.md)")
+  fi
+
+  # Детектор (б): баланс <details> / </details>
+  DETAILS_OPEN=$(grep -c '<details' "$WEEKPLAN" 2>/dev/null || true); DETAILS_OPEN=${DETAILS_OPEN:-0}
+  DETAILS_CLOSE=$(grep -c '</details>' "$WEEKPLAN" 2>/dev/null || true); DETAILS_CLOSE=${DETAILS_CLOSE:-0}
+  if [ "$DETAILS_OPEN" != "$DETAILS_CLOSE" ]; then
+    WP_ERRORS+=("WeekPlan: несбалансированные <details> (открытий=$DETAILS_OPEN, закрытий=$DETAILS_CLOSE)")
+  fi
+
+  # Детектор (в): обязательные секции WeekPlan (5 минимальных по templates-dayplan.md)
+  WP_REQUIRED=(
+    "Итоги"
+    "Повестка"
+    "Inbox Triage"
+    "План на неделю"
+    "Контент-план"
+  )
+  for wp_section in "${WP_REQUIRED[@]}"; do
+    if ! grep -q "$wp_section" "$WEEKPLAN"; then
+      WP_MISSING_LIST+=("$wp_section")
+    fi
+  done
+
+  if [ ${#WP_MISSING_LIST[@]} -gt 0 ] || [ ${#WP_ERRORS[@]} -gt 0 ]; then
+    WP_MISSING_STR=$(IFS=', '; echo "${WP_MISSING_LIST[*]:-}")
+    WP_ERRORS_STR=$(IFS=', '; echo "${WP_ERRORS[*]:-}")
+    WP_MSG="⛔ WEEKPLAN VALIDATION FAILED."
+    [ ${#WP_MISSING_LIST[@]} -gt 0 ] && WP_MSG="$WP_MSG Пропущены секции (${#WP_MISSING_LIST[@]}): $WP_MISSING_STR."
+    [ ${#WP_ERRORS[@]} -gt 0 ] && WP_MSG="$WP_MSG Ошибки структуры: $WP_ERRORS_STR."
+    WP_MSG="$WP_MSG Исправь WeekPlan перед коммитом."
+    cat <<EOF
+{"decision": "block", "reason": "$WP_MSG"}
+EOF
+    exit 0
+  fi
+fi
+
 # Report results
 if [ ${#MISSING[@]} -gt 0 ] || [ ${#ERRORS[@]} -gt 0 ]; then
   MISSING_STR=$(printf ', %s' "${MISSING[@]}")
