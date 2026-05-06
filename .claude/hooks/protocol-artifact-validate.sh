@@ -88,7 +88,7 @@ fi
 # Scout: проверяется только если секция вообще присутствует в DayPlan (опциональный компонент,
 # зависит от DS-agent-workspace). Если секции нет — Scout не сконфигурирован, валидатор не блокирует.
 if grep -q "Наработки Scout" "$DAYPLAN" 2>/dev/null; then
-  if ! awk '/Наработки Scout/,/^<\/details>/' "$DAYPLAN" 2>/dev/null | grep -qE 'наход|capture|статус|нет|find|disabled|not configured'; then
+  if ! awk '/Наработки Scout/,/^<\/details>/' "$DAYPLAN" 2>/dev/null | grep -iqE 'наход|capture|статус|нет|find|disabled|not configured'; then
     ERRORS+=("Секция 'Наработки Scout' пустая (допустимы маркеры 'нет находок', 'disabled', 'not configured')")
   fi
 fi
