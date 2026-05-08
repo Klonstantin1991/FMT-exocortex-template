@@ -35,21 +35,6 @@ ls ~/IWE/CLAUDE.md && echo "OK: CLAUDE.md на месте"
 ls ~/IWE/DS-strategy/ && echo "OK: DS-strategy создан"
 ```
 
-### Альтернативный вариант — форк через браузер
-
-Если команда `gh repo fork` не работает или GitHub CLI не установлен:
-
-1. Открой в браузере: `github.com/TserenTserenov/FMT-exocortex-template`
-2. Нажми кнопку **Fork** (вверху справа) и подтверди — репо появится в твоём аккаунте
-3. В терминале замени `ВАШ-USERNAME` на своё имя на GitHub:
-
-```bash
-mkdir -p ~/IWE && cd ~/IWE
-git clone https://github.com/ВАШ-USERNAME/FMT-exocortex-template
-cd FMT-exocortex-template
-bash setup.sh
-```
-
 ---
 
 ## 2. Открой Claude Code (1 мин)
