@@ -237,6 +237,16 @@ case "$1" in
         notify_telegram "session-close-feed"
         ;;
 
+    "git-diff-feed")
+        # WP-247 Ф-MULTI-SOURCE.2: git-diff feeder (cron 06:00/21:00).
+        # Извлекает кандидатов из git log за окно и пишет ###-блоки в captures.md.
+        # Окно: $2 (по умолчанию "12 hours ago").
+        SINCE="${2:-12 hours ago}"
+        log "Running git-diff FEED (since: $SINCE)"
+        run_claude "git-diff-feed" "$SINCE"
+        notify_telegram "git-diff-feed"
+        ;;
+
     "on-demand")
         log "Running on-demand extraction"
         run_claude "on-demand"
