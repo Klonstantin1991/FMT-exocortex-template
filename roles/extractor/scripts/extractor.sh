@@ -227,6 +227,16 @@ case "$1" in
         run_claude "session-close"
         ;;
 
+    "session-close-feed")
+        # WP-247 Ф-MULTI-SOURCE.1: feeder-режим (non-interactive).
+        # Извлекает кандидатов из транскрипта + git diff,
+        # пишет ###-блоки в captures.md с маркером [feed:session-close YYYY-MM-DD].
+        # Не создаёт extraction-report — это работа inbox-check потом.
+        log "Running session-close FEED (non-interactive, writes to captures.md)"
+        run_claude "session-close-feed" "$2"
+        notify_telegram "session-close-feed"
+        ;;
+
     "on-demand")
         log "Running on-demand extraction"
         run_claude "on-demand"
