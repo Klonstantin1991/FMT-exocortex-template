@@ -20,7 +20,7 @@
 set -euo pipefail
 
 SCRIPT_NAME="$(basename "$0")"
-VERSION="0.1.0-mvp"
+VERSION="0.2.0"
 LAYER_FILTER="all"
 SECRET_VALUE=""
 TOTAL_HITS=0
@@ -190,21 +190,127 @@ scan_layer_cloud() {
   log_layer_start "2 (cloud env)"
   local hits=0
 
-  # Railway — проверяем наличие CLI / токена
-  if command -v railway &>/dev/null && [[ -n "${RAILWAY_TOKEN:-}" ]]; then
-    warn "Railway scan not yet implemented (WP-315 Ф3)"
-    # TODO: railway variables --json | jq ... | grep -c
+  # ── Railway (GraphQL API v2) ──────────────────────────────────────────
+  # Токен: RAILWAY_TOKEN env var → ~/.secrets/railway-api-token → skip
+  local railway_token="${RAILWAY_TOKEN:-}"
+  # Fallback: IWE .secrets directory (IWE_WORKSPACE > ~/IWE > ~/.secrets)
+  if [[ -z "$railway_token" ]]; then
+    local _iwe_ws="${IWE_WORKSPACE:-${HOME}/IWE}"
+    for _tok_path in "${_iwe_ws}/.secrets/railway-api-token" "${HOME}/.secrets/railway-api-token"; do
+      if [[ -f "$_tok_path" ]]; then
+        railway_token=$(cat "$_tok_path" 2>/dev/null || true)
+        break
+      fi
+    done
+  fi
+
+  if [[ -n "$railway_token" ]]; then
+    if ! command -v curl &>/dev/null; then
+      warn "Railway: curl не установлен (Railway skipped)"
+      ((INFRA_ERRORS++))
+    elif ! command -v jq &>/dev/null; then
+      warn "Railway: jq не установлен (Railway skipped)"
+      ((INFRA_ERRORS++))
+    else
+      # Шаг 1: получаем структуру workspaces → projects → services за один запрос
+      local structure
+      structure=$(curl -sf --max-time 15 \
+        -H "Authorization: Bearer ${railway_token}" \
+        -H "Content-Type: application/json" \
+        -d '{"query":"{ me { workspaces { id name projects { edges { node { id name services { edges { node { id name } } } } } } } } }"}' \
+        "https://backboard.railway.app/graphql/v2" 2>/dev/null) || true
+
+      if [[ -z "$structure" ]] || echo "$structure" | jq -e '.errors' &>/dev/null; then
+        warn "Railway API недоступен или токен недействителен (Railway skipped)"
+        ((INFRA_ERRORS++))
+      else
+        local railway_hits=0
+        local nws
+        nws=$(echo "$structure" | jq -r '.data.me.workspaces | length')
+
+        for ((wi=0; wi<nws; wi++)); do
+          local nproj
+          nproj=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges | length")
+          for ((pi=0; pi<nproj; pi++)); do
+            local proj_id proj_name
+            proj_id=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges[${pi}].node.id")
+            proj_name=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges[${pi}].node.name")
+
+            # Шаг 2: environments для проекта
+            local env_payload envs nenv
+            env_payload=$(jq -nc --arg q "{ environments(projectId: \"${proj_id}\") { edges { node { id name } } } }" '{"query": $q}')
+            envs=$(curl -sf --max-time 10 \
+              -H "Authorization: Bearer ${railway_token}" \
+              -H "Content-Type: application/json" \
+              -d "$env_payload" \
+              "https://backboard.railway.app/graphql/v2" 2>/dev/null) || true
+            nenv=$(echo "$envs" | jq -r '.data.environments.edges | length' 2>/dev/null || echo 0)
+
+            local nsvc
+            nsvc=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges[${pi}].node.services.edges | length")
+
+            for ((si=0; si<nsvc; si++)); do
+              local svc_id svc_name
+              svc_id=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges[${pi}].node.services.edges[${si}].node.id")
+              svc_name=$(echo "$structure" | jq -r ".data.me.workspaces[${wi}].projects.edges[${pi}].node.services.edges[${si}].node.name")
+
+              for ((ei=0; ei<nenv; ei++)); do
+                local env_id env_name
+                env_id=$(echo "$envs" | jq -r ".data.environments.edges[${ei}].node.id")
+                env_name=$(echo "$envs" | jq -r ".data.environments.edges[${ei}].node.name")
+
+                # Шаг 3: переменные сервиса — возвращает JSON-объект {KEY: VALUE}
+                local var_payload vars
+                var_payload=$(jq -nc \
+                  --arg q "{ variables(projectId: \"${proj_id}\", environmentId: \"${env_id}\", serviceId: \"${svc_id}\") }" \
+                  '{"query": $q}')
+                vars=$(curl -sf --max-time 10 \
+                  -H "Authorization: Bearer ${railway_token}" \
+                  -H "Content-Type: application/json" \
+                  -d "$var_payload" \
+                  "https://backboard.railway.app/graphql/v2" 2>/dev/null) || true
+
+                if [[ -z "$vars" ]] || echo "$vars" | jq -e '.errors' &>/dev/null; then
+                  warn "Railway: не удалось получить переменные для ${proj_name}/${svc_name}"
+                  ((INFRA_ERRORS++))
+                  continue
+                fi
+
+                # grep -cF: считаем вхождения, не выводим значение
+                local c
+                c=$(echo "$vars" | jq -r '.data.variables // {} | to_entries[].value' 2>/dev/null \
+                  | grep -cF "$SECRET_VALUE" 2>/dev/null || true)
+                if [[ "${c:-0}" -gt 0 ]]; then
+                  printf "  %-20s %-40s %s\n" "Layer 2" "Railway ${proj_name}/${svc_name}[${env_name}]" "${RED}${c} hits${NC}"
+                  ((railway_hits += c))
+                fi
+              done
+            done
+          done
+        done
+
+        ((hits += railway_hits))
+      fi
+    fi
   else
-    warn "Railway CLI или RAILWAY_TOKEN отсутствует (Layer 2 skipped)"
+    warn "RAILWAY_TOKEN не задан и ~/.secrets/railway-api-token не найден (Railway skipped)"
     ((INFRA_ERRORS++))
   fi
 
-  # Cloudflare Workers — проверяем wrangler
-  if command -v wrangler &>/dev/null; then
-    warn "CF Workers scan not yet implemented (WP-315 Ф3)"
-    # TODO: wrangler secret list --name <worker>
+  # ── Cloudflare Workers ───────────────────────────────────────────────
+  # CF Workers secrets зашифрованы write-only: после установки значение
+  # невозможно прочитать ни через CLI, ни через API (by design, Cloudflare).
+  # Скан по значению невозможен. Layer 2 для CF = структурный аудит + инструкция.
+  if command -v wrangler &>/dev/null && [[ -n "${CF_API_TOKEN:-}" ]]; then
+    warn "CF Workers: secrets write-only — скан по значению невозможен (Cloudflare design)."
+    warn "  После ротации обновить вручную: wrangler secret put <VAR> --name <worker>"
+    warn "  Список workers с этим секретом: security-posture.md §6"
+    # 0 hits, нет INFRA_ERROR — это известное ограничение, не сбой инфраструктуры
+  elif command -v wrangler &>/dev/null; then
+    warn "CF_API_TOKEN не задан (CF Workers Layer 2 skipped)"
+    ((INFRA_ERRORS++))
   else
-    warn "wrangler не установлен (Layer 2 CF skipped)"
+    warn "wrangler не установлен (CF Workers Layer 2 skipped)"
     ((INFRA_ERRORS++))
   fi
 
