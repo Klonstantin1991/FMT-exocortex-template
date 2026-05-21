@@ -103,8 +103,9 @@ if [[ -n "$PROTOCOL" ]]; then
     esac
 
     local task_file="${tasks_dir}/${task_id}.md"
-    local due_ts
+    local due_ts today
     due_ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    today="$(date +%Y-%m-%d)"
 
     cat > "$task_file" <<TASKEOF
 ---
@@ -121,7 +122,9 @@ result_location:
 acceptance:
   - Протокол ${protocol} выполнен без ошибок
   - git status чист в целевых репо
-params: {}
+params:
+  date: ${today}
+  context_note: "headless session ${AGENT_SESSION_ID}"
 ---
 
 Автоматическая задача: выполнить ОРЗ-протокол «${protocol}» через headless-адаптер.
