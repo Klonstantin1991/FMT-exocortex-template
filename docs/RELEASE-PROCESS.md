@@ -8,9 +8,10 @@
 `update.sh` качает файлы из `raw.githubusercontent.com/main` — без тегов, без staging-ветки.
 Любой коммит в `main` немедленно доступен пользователям при следующем `bash update.sh`.
 
-**Версия** в `update-manifest.json["version"]` служит информационной меткой (показывается
-в `update.sh --check`), а не барьером доставки. Бамп версии = сигнал «этот набор изменений
-стабилизирован, пора обновляться».
+**Версия** в `update-manifest.json["version"]` служит информационной меткой — отображается
+при запуске `bash update.sh` как «Обновления экзокортекса (vX.Y.Z)», а также скачивается
+при `--check` из remote-манифеста для сравнения с локальной. Бамп версии = сигнал
+«этот набор изменений стабилизирован, пора обновляться».
 
 ---
 
@@ -37,13 +38,16 @@ git pull --rebase
 NEW_VERSION="0.35.0"
 
 # 3. Забампать версию в манифесте
-python3 -c "
+python3 - "$NEW_VERSION" <<'EOF'
 import json, sys
-m = json.load(open('update-manifest.json'))
+with open('update-manifest.json', encoding='utf-8') as f:
+    m = json.load(f)
 m['version'] = sys.argv[1]
-json.dump(m, open('update-manifest.json','w'), ensure_ascii=False, indent=2)
-open('update-manifest.json','a').write('\n')
-" "$NEW_VERSION"
+with open('update-manifest.json', 'w', encoding='utf-8') as f:
+    json.dump(m, f, ensure_ascii=False, indent=2)
+    f.write('\n')
+print(f"version bumped to {sys.argv[1]}")
+EOF
 
 # 4. Добавить раздел в CHANGELOG.md: переименовать [Unreleased] → [X.Y.Z] и добавить новый [Unreleased]
 # Шаблон:
@@ -78,10 +82,15 @@ git push
 **Правило:**
 
 1. Удаляешь файл из репо → в том же коммите добавляешь его в `deprecated_files`.
-2. Проверяешь что ни один скрипт/хук в репо не ссылается на этот путь
-   (Detector 10 в `integration-contract-validator.sh` поймает нарушение автоматически).
+2. Вручную проверить что ни один скрипт/хук в репо не ссылается на этот путь:
+   ```bash
+   grep -r "path/to/deprecated-file" . --include="*.sh" --include="*.md" --include="*.json"
+   ```
+   Detector 10 в `integration-contract-validator.sh` ловит этот случай для
+   `roles/strategist/prompts/` — но только для этого подмножества файлов.
+   Для всех остальных deprecated-файлов ручная проверка обязательна.
 3. Использовать `deprecated_files` как TODO-трекер («скоро уберём») — запрещено:
-   Detector 10 расценит упоминание пути в коде как ошибку.
+   после `update.sh` пользователь не получит новый файл, но и старый уже удалён из доставки.
 
 **Почему важно:** если `deprecated_files` содержит файл, который runner ещё использует,
 после `update.sh` runner упадёт с «файл не найден» (прецедент: `af3b15c`, роли стратегиста,
