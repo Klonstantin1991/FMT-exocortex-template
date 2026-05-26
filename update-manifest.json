@@ -105,6 +105,9 @@
       "path": ".claude/skills/apply-captures/SKILL.md"
     },
     {
+      "path": ".claude/skills/agent-fault/SKILL.md"
+    },
+    {
       "path": ".claude/skills/archgate/SKILL.md"
     },
     {
@@ -633,6 +636,12 @@
       "path": "scripts/day-open-scaffold.sh"
     },
     {
+      "path": "scripts/generate-executor-catalog.py"
+    },
+    {
+      "path": "scripts/generate-helper-catalog.py"
+    },
+    {
       "path": "scripts/generate-skills-catalog.sh"
     },
     {
@@ -697,6 +706,9 @@
     },
     {
       "path": "scripts/script-promote.sh"
+    },
+    {
+      "path": "scripts/test-route-task.sh"
     },
     {
       "path": "scripts/server-calendar.sh"
