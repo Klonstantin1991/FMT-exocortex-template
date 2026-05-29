@@ -708,6 +708,9 @@
       "path": "scripts/script-promote.sh"
     },
     {
+      "path": "scripts/smoke-clean-env.sh"
+    },
+    {
       "path": "scripts/test-route-task.sh"
     },
     {
