@@ -16,6 +16,19 @@ Thank you for your interest in contributing to IWE! This document explains how t
 
 Use [GitHub Issues](https://github.com/TserenTserenov/FMT-exocortex-template/issues) with the appropriate template.
 
+**Before filing a new issue:**
+
+1. **Read the [Roadmap & Backlog Focus](https://github.com/TserenTserenov/FMT-exocortex-template/issues/147)** (pinned) — it lists active focus areas grouped by category. Your bug may already be tracked.
+2. **Search closed issues** for prior analyses:
+   ```
+   is:closed your-keyword                    # full-text closed
+   is:closed label:stale-archive             # archived during 2026-06-01 cleanup
+   is:closed label:triaged-2026-06-01        # all triaged issues (incl. closed)
+   ```
+3. **Include in the bug report:** OS, IWE version (`bash update.sh --check`), reproducing command, expected vs actual behavior.
+
+Maintainer responds within 1 week, applies a categorization label, and either schedules a fix or marks as `needs-reproduction` / `needs-discussion`.
+
 ### Share Your Setup
 
 Show how you use IWE in [GitHub Discussions](https://github.com/TserenTserenov/FMT-exocortex-template/discussions):
