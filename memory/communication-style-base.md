@@ -1,6 +1,6 @@
 ---
 name: communication-style-base
-description: Базовый разговорный стиль IWE - единый источник для всех агентов при общении с людьми
+description: "ПРОЕКЦИЯ L0 базового стиля IWE. SoT: PACK-digital-platform/.../DP.SC.050-communication-style-base.md"
 type: reference
 horizon: hot
 domains: [communication, ux]
@@ -8,6 +8,8 @@ status: active
 valid_from: 2026-06-01
 owner: platform
 schema_version: 1
+projection_of: "PACK-digital-platform/pack/digital-platform/08-service-clauses/DP.SC.050-communication-style-base.md"
+sync_method: "scripts/sync-communication-style.py"
 ---
 
 # Базовый разговорный стиль IWE
