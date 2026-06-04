@@ -2,7 +2,7 @@
 # see DP.SC.153
 # НЕ редактировать вручную — перегенерировать через generate-skills-catalog.sh
 #
-generated: 2026-05-31T10:56:34Z
+generated: 2026-06-04T14:08:14Z
 skills_dir: .claude/skills
 
 skills:
@@ -42,6 +42,19 @@ skills:
     - CLAUDE.md
     - verify
     - bottleneck-pick
+    - decompose
+  - id: audit-docs
+    name: "audit-docs"
+    description: "Аудит документации репо: детекция drift'а между кодом и docs, отчёт coverage по категориям. Запускается вручную или по triggered drift critical."
+    version: 0.1.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /audit-docs
+    depends_on: []
+    invoked_by:
+    - audit-docs
   - id: audit-installation
     name: "audit-installation"
     description: "Аудит пользовательской инсталляции IWE. Запускает scripts/iwe-audit.sh + MCP healthcheck + smoke-test ритуала через sentinel-механику (контракт dry-run-contract.md), передаёт отчёт subagent'у в роли VR.R.002 Аудитор (context isolation) → verdict ✅/⚠️/❌ по 6 компонентам (Inventory, L1 drift, DS-strategy, L3 customizations, MCP, ритуал). Используй после restore из бэкапа, после update.sh, или при еженедельной сверке."
@@ -66,6 +79,7 @@ skills:
     depends_on: []
     invoked_by:
     - bottleneck-pick
+    - platform-bottleneck
   - id: check-secret
     name: "check-secret"
     description: "Проверка фрагмента текста на возможные секреты (API keys, tokens, passwords) ПЕРЕД отправкой в чат / коммитом / публикацией. Третий слой защиты поверх pre-commit hook (B7.7a) и PostToolUse redact (B7.7b). Manual gate — пользователь явно вызывает на потенциально чувствительный текст."
@@ -118,8 +132,34 @@ skills:
     - run-protocol
     - extend
     - day-close
+    - week-close-pilot
     - day-open
-    - week-close
+  - id: decompose
+    name: "decompose"
+    description: "Декомпозиция деятельности на этапы с физическими артефактами и чеклистами приёмки. Детектор разрывов. Используй при открытии РП ≥3h (open-loop/problem-framing) или явном запросе «разложи на этапы». Носитель роли R29 Декомпозитор."
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /decompose
+    depends_on: []
+    invoked_by:
+    - bottleneck-pick
+    - decompose
+  - id: diagnose-iwe
+    name: "diagnose-iwe"
+    description: "Диагностика ступени мастерства (Диагност R28, FORM.089 §6.1) прямо в VS Code / claude.ai. До 5 вопросов, ~5 мин. Сохраняет cp-профиль в цифровой двойник (browser) или Neon (VS Code). Запускай когда: пилот говорит «пройди диагностику», «какая моя ступень», «/diagnose-iwe» — или ПРОАКТИВНО когда видишь пустой cp_profile или нового пользователя без данных."
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /diagnose-iwe
+    depends_on: []
+    invoked_by:
+    - diagnose-iwe
+    - pack-creator
   - id: extend
     name: "extend"
     description: "Каталог расширяемости IWE: что можно настроить, какие extension points существуют, какие параметры доступны, как установить чужое расширение."
@@ -190,6 +230,7 @@ skills:
     - ke
     - pack-new
     - apply-captures
+    - pack-creator
   - id: kimi-peer-writer
     name: "kimi-peer-writer"
     description: "Peer-сессия DP.SC.154 где Kimi = писатель, Claude = напарник. Запускается простой фразой. Включает ОРЗ Opening и Closing, turn-loop, эскалации, Decision Gate (зафиксировать vs реализовать → ревью → проверить → задеплоить), отложенную финализацию и верификацию."
@@ -226,6 +267,30 @@ skills:
     invoked_by:
     - CLAUDE.md
     - month-close
+  - id: org-dev
+    name: "org-dev"
+    description: "|"
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /org-dev
+    depends_on: []
+    invoked_by:
+    - org-dev
+  - id: pack-creator
+    name: "pack-creator"
+    description: "|"
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /pack-creator
+    depends_on: []
+    invoked_by:
+    - pack-creator
   - id: pack-new
     name: "pack-new"
     description: "Создание нового Pack — guided flow по SPF: выбор домена, имя Pack, scaffold структуры, дорожная карта наполнения."
@@ -237,6 +302,7 @@ skills:
     depends_on: []
     invoked_by:
     - CLAUDE.md
+    - pack-creator
   - id: peer-conversation
     name: "peer-conversation"
     description: "Многотуровый диалог писателя (Claude) с напарником (Kimi) по задаче пилота (DP.SC.154). Ведёт turn-loop, обнаруживает CONSENSUS/ESCALATE, после консенсуса — Decision Gate (зафиксировать vs реализовать → ревью → проверить → задеплоить), синтезирует report.md через Agent tool."
@@ -277,6 +343,18 @@ skills:
     - bottleneck-pick
     - personal-guide-start
     - personal-guide-render
+  - id: platform-bottleneck
+    name: "platform-bottleneck"
+    description: "Alias для /bottleneck-pick --layer platform. Deprecated — используйте /bottleneck-pick напрямую."
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /platform-bottleneck
+    depends_on: []
+    invoked_by:
+    - platform-bottleneck
   - id: run-protocol
     name: "run-protocol"
     description: "Пошаговое выполнение протокола ОРЗ с обязательной отметкой каждого шага. Предотвращает пропуск шагов (включая верификацию)."
@@ -290,7 +368,6 @@ skills:
     - CLAUDE.md
     - day-close
     - audit-installation
-    - week-close
   - id: setup-wakatime
     name: "setup-wakatime"
     description: "Настройка WakaTime time-tracking для Claude Code и VS Code"
@@ -351,6 +428,8 @@ skills:
     - day-close
     - verify
     - kimi-peer-writer
+    - pack-creator
+    - audit-docs
   - id: w-reflection
     name: "w-reflection"
     description: "Записать W-рефлексию (мировоззренческий слот RCS) в learning.w_reflections. Используется Диагностом R28 (MIM.R.009) или вызывается пользователем после рефлексивной сессии. Влияет на gate Д→П (FORM.089 §5.2)."
@@ -363,6 +442,18 @@ skills:
     depends_on: []
     invoked_by:
     - w-reflection
+  - id: week-close-pilot
+    name: "week-close-pilot"
+    description: "Скилл IWE — см. тело файла"
+    version: 1.0.0
+    layer: L3
+    status: active
+    triggers:
+      slash:
+        - /week-close-pilot
+    depends_on: []
+    invoked_by:
+    - week-close-pilot
   - id: week-close
     name: "week-close"
     description: "Протокол закрытия недели (Week Close). Ретро 7 дней + carry-over в новую неделю + платформенные шаги (бэкап, dirty repos)."
@@ -376,8 +467,8 @@ skills:
     invoked_by:
     - run-protocol
     - extend
+    - week-close-pilot
     - month-close
-    - week-close
     - week-close
   - id: wp-new
     name: "wp-new"
@@ -391,3 +482,5 @@ skills:
     depends_on: []
     invoked_by:
     - wp-new
+    - pack-creator
+    - decompose

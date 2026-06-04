@@ -8,10 +8,17 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
+
 ## [Unreleased] — обновлено 2026-06-04
 
 ### Added
 
+- `9a04944` feat(wp-7): WP-REGISTRY Naming rule в Agent Core SYNC-CORE
+- `77f5052` feat(wp-7): close-wp.sh + create-wp.sh archive-заготовка
+- `be7b9ce` feat(multi-agent): поддержка Kimi Code и Hermes в точках входа
+- `8d0d8e5` feat(style): правило #5 «— это» + детектор R5-emdash в response-clarity-hook
+- `57f6ee7` feat(wp-395): Ф4 — универсальный дашборд agent-dashboard.py для IWE-шаблона
+- `560c357` feat(template-sync): Status Reporting (WP-395) + staged validator mode
 - `fccd93f` feat(WP-388 Ф8-Ф10): трёхслойная архитектура стиля + enforce
 - `b11ea42` feat(wp-394): Ф4.3-4.5 — промоция паттернов в шаблон + восстановление дрифта
 - `e4a8645` feat(wp-394): Ф4.2 — single-source автоген AGENTS.md из ядра CLAUDE.md
@@ -35,13 +42,10 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - `7e9aa78` feat(triage): post-2026-06-01 backlog cleanup infrastructure
 - `dc18e90` feat(detection): MVP FMT critical/deadline issues alert (peer-session 2026-06-01-18) (#145)
 - `6be164d` feat(hindsight): WP-337/А.13 FMT template — docker-compose, start, launchd, docs
-- `43e8268` feat(WP-377): promote pack-creator + org-dev + spf-guard
-- `f47bf49` feat(WP-348): promote apply-captures defer_until invariant to L1
-- `bc5686f` feat(L1): B-005 reliability обхода Backlog и pending-фаз
-- `fbc5585` feat(L1): promote DP.D.052 v2 формулировок из peer-сессии 2026-05-31-11
 
 ### Changed
 
+- `0acb88d` chore: sync rules + protocols from template-sync (2026-06-04)
 - `5840624` refactor: externalize downstream paths from sync script to yaml config (WP-388)
 - `b6ddac7` refactor: FMT-копия стиля → проекция Pack SoT + обобщённый sync (WP-388 Ф8)
 - `7c7768f` docs: РП-394 Ф4.3-4.5 — PREFIX/BODY/TAIL + memory-lifecycle + Hermes coordination в шаблон [no-registry-touch]
@@ -51,10 +55,12 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - `0a15c8a` docs(skills): Ф4 WP-386 — явный Шаг 1 Extensions checks + WHY-комментарий dry-run sentinel
 - `c54ff45` ci: migrate actions/checkout@v4 → v6, github-script@v7 → v8
 - `76be56b` docs(CHANGELOG): корректировки 0.35.0 по post-deploy verify
-- `22cdd0d` chore(WP-377): R29 Детектор → R47 в hooks/lib/detectors
 
 ### Fixed
 
+- `efadfa0` fix(fmt): триаж 4 issues + сигнальный канал Day Open
+- `136c4b1` fix(day-close): шаг 3c — явное done-форматирование строк WP-REGISTRY
+- `e4e3c96` fix(wp-395): recursive-retry guard в get_agents() — max 1 refresh
 - `0ce1864` fix(wp-393): resolve 3 medium review findings
 - `8168e05` fix(peer-infra): synthesis 4.2 stdout-only — остаточный High из баг-репорта WP-393
 - `830ff9d` fix(peer-infra): адаптер passthrough --permission-mode + SKILL.md stdout-only

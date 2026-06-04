@@ -67,6 +67,21 @@ if verification_class in ("open-loop", "problem-framing"):
 (Класс задачи: <verification_class>. Выбери модель при запуске Claude Code.)
 ```
 
+**Подсказка маршрутизации агента (WP-383, информационная — не enforcement).**
+По классу работы есть рекомендуемый инициатор/агент. Это подсказка пилоту, не блокировка:
+
+| Класс работы | Рекомендуемый агент |
+|--------------|---------------------|
+| Уборка / форматирование / триаж | Kimi (дёшево, быстро) |
+| Верификация shallow (формат/чеклист/drift) | Kimi |
+| Верификация deep (cross-file invariant) | Claude (statefulness) |
+| Реализация multi-file / tight-loop | Claude (держит состояние сессии) |
+| Дизайн / scope / планирование | сильная модель (Claude/Opus или Kimi) |
+
+**Trigger эскалации (лог, не блок):** если пилот 2 раза подряд выбирает агента вопреки подсказке — записать сигнал «routing-таблица устарела или классификация неверна» в `inbox/WP-383/routing-drift.log` (создать при первом срабатывании). Не блокировать выбор пилота.
+
+> Источник таблицы: `${IWE_GOVERNANCE_REPO:-DS-strategy}/inbox/WP-383/routing-design-v1.md §3`. Statefulness-пробел Kimi закрыт автопередачей git-diff в `kimi-peer-adapter.sh` (§8).
+
 ---
 
 ## Шаг 1. Инициализация
@@ -542,7 +557,6 @@ extensions:
 Задача сессии: <задача>
 
 Прочитай все файлы реплик в <SESSION_DIR> (00-writer.md, 01-peer.md, ...) в порядке нумерации.
-Прочитай `meta.yaml` — извлеки `roles`, `ad_hoc_roles`, `discovery_turns` для §1.5.
 Если в папке есть `_outcome.md` — прочитай его, он обязателен для §6.
 Если есть review-NN.md / verify-NN.md — включи как якоря в §5/§6.
 Напиши <SESSION_DIR>/report.md строго по схеме ниже.
@@ -564,9 +578,6 @@ confidence_basis: <обязателен если confidence <= med; иначе o
 ttl_event: <«до merge PR-NNN» | «до WP-NNN» | «до отмены пилотом» | omit>
 cost_usd: <если известно; иначе omit>
 cost_source: api | estimated | missing
-roles: <из meta.yaml: roles — {agent_id: [DP.ROLE.NNN, ...]} или omit если пусто>
-ad_hoc_roles: <из meta.yaml: ad_hoc_roles — {role_name: {agent_id, rationale, first_used_turn}} или omit если пусто>
-discovery_turns: <из meta.yaml: discovery_turns, целое; omit если 0>
 ---
 
 # Итоговый отчёт
@@ -574,22 +585,6 @@ discovery_turns: <из meta.yaml: discovery_turns, целое; omit если 0>
 ## 1. Исходная постановка
 - **Задача:** <цитата из задания пилота, дословно>
 - **Первоначальная позиция писателя:** <если зафиксирована в 00-writer.md; omit если нет>
-
-## 1.5 Роли участников
-Omit если `roles` пусто и `ad_hoc_roles` пусто.
-
-**Форменные роли:**
-- Писатель: <writer_agent>
-- Напарник (критик): <peer_agent>
-
-**Содержательные роли (content-roles):**
-- <agent_id>: <роль> (источник: Pack `DP.ROLE.NNN` | ad-hoc | не назначена)
-- ...
-
-**Ad-hoc роли (если есть):**
-- «<имя>» — <agent_id>, <рационал>, впервые использована в ходе <first_used_turn>
-
-**Discovery:** <discovery_turns> ходов ушло на согласование ролей (не считались в лимит).
 
 ## 2. Позиции по темам
 Под каждой темой (затронута обеими сторонами и повлияла на итог):
