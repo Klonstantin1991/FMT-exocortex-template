@@ -72,11 +72,46 @@ do_backup() {
 
   # Mirror *.md/*.yaml/*.yml from auto-memory; --delete prunes files removed upstream.
   # CLAUDE.md is excluded so the workspace copy below isn't deleted by --delete.
+  # day-rhythm-config.yaml is excluded here and handled separately via merge (see below)
+  # to preserve user-configured keys (e.g. calendar_ids) from being overwritten by template defaults.
   rsync -a --delete \
     --exclude='CLAUDE.md' \
+    --exclude='day-rhythm-config.yaml' \
     --include='*.md' --include='*.yaml' --include='*.yml' \
     --exclude='*' \
     "$MEMORY_SRC/" "$EXOCORTEX_DST/"
+
+  # Merge day-rhythm-config.yaml: use auto-memory as base, preserve non-empty user values in dst.
+  # User-configurable keys protected: day_open.calendar_ids
+  local rhythm_src="$MEMORY_SRC/day-rhythm-config.yaml"
+  local rhythm_dst="$EXOCORTEX_DST/day-rhythm-config.yaml"
+  if [ -f "$rhythm_src" ]; then
+    if [ ! -f "$rhythm_dst" ]; then
+      cp "$rhythm_src" "$rhythm_dst"
+    else
+      python3 - "$rhythm_src" "$rhythm_dst" << 'PYEOF'
+import sys, yaml
+
+src_path, dst_path = sys.argv[1], sys.argv[2]
+with open(src_path) as f:
+    src_data = yaml.safe_load(f) or {}
+with open(dst_path) as f:
+    dst_data = yaml.safe_load(f) or {}
+
+merged = dict(src_data)
+
+# Preserve non-empty user values from dst (L4 config, user-editable keys)
+USER_KEYS = [("day_open", "calendar_ids")]
+for section, key in USER_KEYS:
+    dst_val = dst_data.get(section, {}).get(key)
+    if dst_val:  # preserve non-empty dst value over template default
+        merged.setdefault(section, {})[key] = dst_val
+
+with open(dst_path, "w") as f:
+    yaml.dump(merged, f, default_flow_style=False, allow_unicode=True)
+PYEOF
+    fi
+  fi
 
   if [ -f "$WORKSPACE_DIR/CLAUDE.md" ]; then
     cp "$WORKSPACE_DIR/CLAUDE.md" "$EXOCORTEX_DST/CLAUDE.md"

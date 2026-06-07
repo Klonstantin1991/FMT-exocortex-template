@@ -195,22 +195,34 @@ render_repo_issues() {
   local since
   since=$(date -v-2d +%Y-%m-%d 2>/dev/null || date -d "2 days ago" +%Y-%m-%d 2>/dev/null)
   [ -z "$since" ] && { echo "_не удалось вычислить дату фильтра — пропуск._"; return; }
-  local out="" any=0 repo slug rows
+  local out="" any=0 repo slug rows stale_count stale_url
   for repo in "$IWE"/*/; do
     [ -d "${repo}.git" ] || continue
     git -C "$repo" remote get-url origin 2>/dev/null | grep -qi github || continue
     slug=$(basename "$repo")
+    # New issues (last 2 days)
     rows=$( (cd "$repo" && gh issue list --state open --search "created:>=$since" \
              --json number,title --jq '.[] | "| #\(.number) | \(.title) |"' 2>/dev/null) )
     if [ -n "$rows" ]; then
-      out="${out}\n**${slug}:**\n\n| # | Заголовок |\n|---|---|\n${rows}\n"
+      out="${out}\n**${slug} (новые):**\n\n| # | Заголовок |\n|---|---|\n${rows}\n"
+      any=1
+    fi
+    # Stale issues: open + labeled stale-unattended (pipeline gap fix, issue #pipeline)
+    stale_count=$( (cd "$repo" && gh issue list --state open --label "stale-unattended" \
+                   --json number --jq 'length' 2>/dev/null) || echo "0" )
+    if [ "${stale_count:-0}" -gt 0 ] 2>/dev/null; then
+      local remote_url
+      remote_url=$(git -C "$repo" remote get-url origin 2>/dev/null \
+                   | sed 's|git@github.com:|https://github.com/|; s|\.git$||')
+      stale_url="${remote_url}/issues?q=is:open+label:stale-unattended"
+      out="${out}\n⚠️ **${slug}:** ${stale_count} старых issues без движения → [открыть фильтр](${stale_url})\n"
       any=1
     fi
   done
   if [ "$any" = "1" ]; then
     printf "%b" "$out" | tee "$cache"
   else
-    echo "Новых задач за 2 дня нет." | tee "$cache"
+    echo "Новых задач за 2 дня нет. Зависших (stale-unattended) тоже нет." | tee "$cache"
   fi
 }
 
