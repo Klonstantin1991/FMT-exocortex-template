@@ -22,10 +22,12 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
-## [Unreleased] — обновлено 2026-06-11
+
+## [Unreleased] — обновлено 2026-06-12
 
 ### Added
 
+- `ba94993` feat(WP-7/DOA1): осознанная синхронизация day-open-scaffold.sh
 - `47ec08b` feat: model lifecycle (analysis/testing/active/archived) for local-llm stack (РП404 Ф2)
 - `0ce2cda` feat: promote local-llm stack to template (РП404 Ф3)
 - `7ca6e2e` feat(wp7): MFC4 — auto-manifest generation + verify + CI gate
@@ -83,6 +85,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - `6be164d` feat(hindsight): WP-337/А.13 FMT template — docker-compose, start, launchd, docs
 - `43e8268` feat(WP-377): promote pack-creator + org-dev + spf-guard
 - `f47bf49` feat(WP-348): promote apply-captures defer_until invariant to L1
+- `bc5686f` feat(L1): B-005 reliability обхода Backlog и pending-фаз
+- `fbc5585` feat(L1): promote DP.D.052 v2 формулировок из peer-сессии 2026-05-31-11
 
 ### Changed
 
