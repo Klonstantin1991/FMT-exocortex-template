@@ -31,7 +31,9 @@ else
     _STAT_FLAG="-c %Y"  # GNU/Linux
 fi
 
-IWE_ROOT="${IWE_ROOT:-$HOME/IWE}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../.claude/lib/iwe-env-bootstrap.sh" || exit 1
 MANIFEST="${MANIFEST:-$IWE_ROOT/.claude/sync-manifest.yaml}"
 MODE="all"
 TOP_N=0
