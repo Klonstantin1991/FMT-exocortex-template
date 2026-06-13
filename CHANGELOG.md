@@ -23,10 +23,12 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 
 
-## [Unreleased] — обновлено 2026-06-12
+## [Unreleased] — обновлено 2026-06-13
 
 ### Added
 
+- `4f4c232` feat(linux): кросс-платформенная портируемость — systemd user-таймеры ролей, единый env-bootstrap, OS-aware backup-check (#184). **Linux-портабилити — работа @TriplEight (Denis Pisarev), PR #179 + #181, консолидированы в #184 с тремя фиксами при интеграции.**
+- `5ca5e7b` feat(hooks): destructive-guard + check-trash — детерминированный блок необратимых git-операций (#183). **Хуки безопасности — @TriplEight (Denis Pisarev), извлечены из PR #176.**
 - `ba94993` feat(WP-7/DOA1): осознанная синхронизация day-open-scaffold.sh
 - `47ec08b` feat: model lifecycle (analysis/testing/active/archived) for local-llm stack (РП404 Ф2)
 - `0ce2cda` feat: promote local-llm stack to template (РП404 Ф3)
